@@ -1,11 +1,12 @@
-import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Inject, Post, Req, UseGuards } from '@nestjs/common';
 import { UserService } from '../service/user.service';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+import { IUserService, IUSERSERVICE } from '../service/interface/IUser-service.interface';
 
 @UseGuards(JwtAuthGuard)
 @Controller('users')
 export class UserController {
-  constructor(private readonly _userService: UserService) {}
+  constructor(@Inject(IUSERSERVICE) private readonly _userService: IUserService) {}
 
   @Get('all')
   async findAll(@Req() req: Request) {

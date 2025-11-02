@@ -2,9 +2,10 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { User } from '../schemas/user.schema';
 import { Model } from 'mongoose';
+import { IUserRepository } from './interface/IUser-repository.interface';
 
 @Injectable()
-export class UserRepository {
+export class UserRepository implements IUserRepository{
   constructor(@InjectModel(User.name) private _userModel: Model<User>) {}
 
   async create(userData: Partial<User>) {

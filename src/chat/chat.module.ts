@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common';
 
 import { JwtModule } from '@nestjs/jwt';
-import { ChatsService } from './service/chat.service';
 import { ChatRepository } from './repository/chat.repository';
 import { ChatsController } from './controller/chat.controller';
 import { UserModule } from 'src/user/user.module';
@@ -9,6 +8,9 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { Chat, ChatSchema } from './schema/chat.schema';
 import { ChatGateway } from './chatgateway';
 import { MessageModule } from 'src/message/message.module';
+import { ICHATSERVICE } from './service/interface/IChatService.interface';
+import { ICHATREPOSITORY } from './repository/interface/IChatRepository.interface';
+import { ChatService } from './service/chat.service';
 
 @Module({
   imports: [
@@ -20,8 +22,18 @@ import { MessageModule } from 'src/message/message.module';
 
     UserModule,
     MessageModule,
-  ],    
-  providers: [ChatsService, ChatRepository, ChatGateway],
+  ],
+  providers: [
+    {
+      provide: ICHATSERVICE,
+      useClass: ChatService,
+    },
+    {
+      provide: ICHATREPOSITORY,
+      useClass: ChatRepository,
+    },
+    ChatGateway,
+  ],
   controllers: [ChatsController],
   exports: [],
 })

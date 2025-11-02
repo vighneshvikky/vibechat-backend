@@ -8,8 +8,12 @@ import {
   OnGatewayDisconnect,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { ChatsService } from './service/chat.service';
+import { ChatService } from './service/chat.service';
 import { MessageService } from 'src/message/service/message.service';
+import { FileMetadata, MessageType } from 'src/message/interface/message.types';
+import { Inject } from '@nestjs/common';
+import { IMessageService, IMESSAGESERVICE } from 'src/message/service/interface/IMessage-interface';
+import { IChatService, ICHATSERVICE } from './service/interface/IChatService.interface';
 
 @WebSocketGateway({
   cors: {
@@ -24,8 +28,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   private userSockets = new Map<string, string>();
 
   constructor(
-    private readonly chatService: ChatsService,
-    private readonly messageService: MessageService,
+    @Inject(ICHATSERVICE) private readonly chatService: IChatService,
+    @Inject(IMESSAGESERVICE) private readonly messageService: IMessageService,
   ) {}
 
   handleConnection(client: Socket) {
@@ -105,97 +109,108 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   // ✅ Send message
   // chatgateway.ts
-  @SubscribeMessage('sendMessage')
-  async handleSendMessage(
-    @MessageBody()
-    data: {
-      chatId: string;
-      senderId: string;
-      content: string;
-      type?: string;
-    },
-    @ConnectedSocket() client: Socket,
-  ) {
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log('📥 RECEIVED sendMessage event');
-    console.log('📍 Client ID:', client.id);
-    console.log('📍 Data:', JSON.stringify(data, null, 2));
-    console.log('📍 Client rooms:', Array.from(client.rooms));
+@SubscribeMessage('sendMessage')
+async handleSendMessage(
+  @MessageBody()
+  data: {
+    chatId: string;
+    senderId: string;
+    content: string;
+    type?: string;
+    fileMetadata?: FileMetadata; // Add this
+  },
+  @ConnectedSocket() client: Socket,
+) {
+  console.log('📥 RECEIVED sendMessage event');
+  console.log('📍 Data:', JSON.stringify(data, null, 2));
 
-    try {
-      // Validate chatId
-      if (!data.chatId || !data.chatId.match(/^[0-9a-fA-F]{24}$/)) {
-        console.error('❌ Invalid chat ID:', data.chatId);
-        client.emit('messageError', { message: 'Invalid chat ID' });
-        return;
-      }
-
-      console.log('✅ ChatId validated');
-
-      // Check if client is in the room
-      if (!client.rooms.has(data.chatId)) {
-        console.error('❌ Client not in room:', data.chatId);
-        client.emit('messageError', { message: 'Not in chat room' });
-        return;
-      }
-
-      console.log('✅ Client is in room');
-      console.log('💾 Saving message to database...');
-
-      // Save message to database
-      const message = await this.messageService.saveMessage(
-        data.chatId,
-        data.senderId,
-        data.content,
-        data.type || 'text',
-      );
-
-      console.log('✅ Message saved with ID:', message._id);
-      console.log('📤 Populating sender info...');
-
-      // Populate sender info before emitting
-      const populatedMessage = await this.messageService.getMessageById(
-        message._id!.toString(),
-      );
-
-      console.log('✅ Message populated:', {
-        id: populatedMessage._id,
-        sender: populatedMessage.senderId?.name,
-        content: populatedMessage.content,
-      });
-
-      console.log('📡 Broadcasting to room:', data.chatId);
-      console.log(
-        '📡 Room members:',
-        this.server.sockets.adapter.rooms.get(data.chatId),
-      );
-
-      // Emit to ALL clients in the room (including sender)
-      this.server.to(data.chatId).emit('newMessage', populatedMessage);
-
-      console.log('✅ Message broadcast complete');
-
-      // Also emit confirmation to sender
-      client.emit('messageSent', {
-        messageId: message._id,
-        chatId: data.chatId,
-      });
-
-      console.log('✅ Confirmation sent to sender');
-      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    } catch (error) {
-      console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-      console.error('❌ ERROR in handleSendMessage:');
-      console.error('Error:', error);
-      console.error('Stack:', error.stack);
-      console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-
-      client.emit('messageError', {
-        message: 'Failed to send message',
-        error: error.message,
-      });
+  try {
+    if (!data.chatId || !data.chatId.match(/^[0-9a-fA-F]{24}$/)) {
+      console.error('❌ Invalid chat ID:', data.chatId);
+      client.emit('messageError', { message: 'Invalid chat ID' });
+      return;
     }
+
+    if (!client.rooms.has(data.chatId)) {
+      console.error('❌ Client not in room:', data.chatId);
+      client.emit('messageError', { message: 'Not in chat room' });
+      return;
+    }
+
+    
+    const message = await this.messageService.saveMessage(
+      data.chatId,
+      data.senderId,
+      data.content,
+      (data.type as MessageType) ?? 'text',
+      data.fileMetadata, 
+    );
+
+    console.log('✅ Message saved with ID:', message._id);
+
+   
+    const populatedMessage = await this.messageService.getMessageById(
+      message._id!.toString(),
+    );
+
+    console.log('📡 Broadcasting to room:', data.chatId);
+
+
+    this.server.to(data.chatId).emit('newMessage', populatedMessage);
+
+    console.log('✅ Message broadcast complete');
+
+    client.emit('messageSent', {
+      messageId: message._id,
+      chatId: data.chatId,
+    });
+
+  } catch (error) {
+    console.error('❌ ERROR in handleSendMessage:', error);
+    client.emit('messageError', {
+      message: 'Failed to send message',
+      error: error.message,
+    });
   }
+}
+
+  // Add this method to your ChatGateway class
+@SubscribeMessage('createPrivateChat')
+async handleCreatePrivateChat(
+  @MessageBody() data: { userId1: string; userId2: string },
+  @ConnectedSocket() client: Socket,
+) {
+  console.log('💬 CREATE PRIVATE CHAT event received:', data);
+
+  try {
+    // Create or get existing private chat
+    const chat = await this.chatService.createPrivateChat(
+      data.userId1,
+      data.userId2,
+    );
+
+    // console.log('✅ Private chat created:', chat._id!);
+
+    // Send confirmation to creator
+    client.emit('privateChatCreated', { chat });
+
+    // Notify the other user (if online)
+    const otherUserId = data.userId2;
+    const socketId = this.userSockets.get(otherUserId);
+    if (socketId) {
+      this.server.to(socketId).emit('privateChatCreated', { chat });
+      console.log(`📤 Sent privateChatCreated to user ${otherUserId}`);
+    }
+
+    return { success: true, chat };
+  } catch (error) {
+    console.error('❌ Error creating private chat:', error);
+    client.emit('error', {
+      message: 'Failed to create private chat',
+      error: error.message,
+    });
+  }
+}
 
   @SubscribeMessage('createGroup')
   async handleCreateGroup(

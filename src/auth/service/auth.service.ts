@@ -1,14 +1,18 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { UserRepository } from 'src/user/repository/user.repository';
 import { User } from 'src/user/schemas/user.schema';
 import * as bcrypt from 'bcrypt';
 import { Response } from 'express';
+import {
+  IUserRepository,
+  IUSERREPOSITORY,
+} from 'src/user/repository/interface/IUser-repository.interface';
 
 @Injectable()
 export class AuthService {
   constructor(
-    private readonly _userRepository: UserRepository,
+    @Inject(IUSERREPOSITORY)
+    private readonly _userRepository: IUserRepository,
     private readonly _jwtService: JwtService,
   ) {}
 
@@ -37,6 +41,10 @@ export class AuthService {
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
     console.log('isPasswordValid', isPasswordValid);
+
+    if (!user || !(await bcrypt.compare(password, user.password))) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
     if (!isPasswordValid)
       throw new UnauthorizedException('Invalid credentials');
 
@@ -87,7 +95,7 @@ export class AuthService {
         expiresIn: '15m',
       },
     );
-console.log('newAccessToken', newAccessToken)
+    console.log('newAccessToken', newAccessToken);
     res.cookie('access_token', newAccessToken, {
       httpOnly: true,
       secure: false,

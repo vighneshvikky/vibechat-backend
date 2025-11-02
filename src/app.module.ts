@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, RequestMethod } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ConfigModule } from '@nestjs/config';
@@ -7,6 +7,7 @@ import { UserModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
 import { ChatModule } from './chat/chat.module';
 import { MessageModule } from './message/message.module';
+import { JwtMiddleware } from './auth/middleware/jwt-auth.middleware';
 
 @Module({
   imports: [
@@ -20,4 +21,17 @@ import { MessageModule } from './message/message.module';
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule {
+  configure(consumer: MiddlewareConsumer) {
+consumer
+  .apply(JwtMiddleware)
+  .exclude(
+    { path: 'auth/login', method: RequestMethod.POST },
+    { path: 'auth/register', method: RequestMethod.POST },
+    { path: 'auth/refresh', method: RequestMethod.GET },
+  )
+  .forRoutes('*');
+
+
+  }
+}

@@ -5,6 +5,8 @@ import { UserService } from './service/user.service';
 import { MongooseModule } from '@nestjs/mongoose';
 import { User, UserSchema } from './schemas/user.schema';
 import { JwtModule } from '@nestjs/jwt';
+import { IUSERSERVICE } from './service/interface/IUser-service.interface';
+import { IUSERREPOSITORY } from './repository/interface/IUser-repository.interface';
 
 @Module({
   imports: [
@@ -14,8 +16,21 @@ import { JwtModule } from '@nestjs/jwt';
       signOptions: { expiresIn: '1d' },
     }),
   ],
-  providers: [UserService, UserRepository],
+  providers: [
+    {
+      provide: IUSERSERVICE,
+      useClass: UserService
+    }, {
+      provide: IUSERREPOSITORY,
+      useClass: UserRepository
+    }],
   controllers: [UserController],
-  exports: [UserRepository, UserService, MongooseModule],
+  exports: [    {
+      provide: IUSERSERVICE,
+      useClass: UserService
+    }, {
+      provide: IUSERREPOSITORY,
+      useClass: UserRepository
+    }, MongooseModule],
 })
 export class UserModule {}
