@@ -16,11 +16,13 @@ async function bootstrap() {
     credentials: true
   })
 
+   const isProduction = process.env.NODE_ENV === 'production';
+
     app.useStaticAssets(join(__dirname, '..', 'uploads'), {
     prefix: '/uploads/',
   });
  await app.listen(process.env.PORT ?? 3000, '0.0.0.0');
-
+console.log(`🚀 Server running in ${isProduction ? 'production' : 'development'} mode`);
   console.log(`Server is running on port ${process.env.PORT ?? 3000}`);
 }
 bootstrap();

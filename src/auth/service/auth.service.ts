@@ -8,6 +8,8 @@ import {
   IUSERREPOSITORY,
 } from 'src/user/repository/interface/IUser-repository.interface';
 
+const isProduction = process.env.NODE_ENV === 'production';
+
 @Injectable()
 export class AuthService {
   constructor(
@@ -15,6 +17,8 @@ export class AuthService {
     private readonly _userRepository: IUserRepository,
     private readonly _jwtService: JwtService,
   ) {}
+
+  
 
   async register(userData: Partial<User>) {
     const existingUser = await this._userRepository.findByEmail(
@@ -60,19 +64,19 @@ export class AuthService {
       expiresIn: '7d',
     });
 
-    res.cookie('access_token', accessToken, {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'lax',
-      maxAge: 15 * 60 * 1000,
-    });
+res.cookie('access_token', accessToken, {
+  httpOnly: true,
+  secure: isProduction,       
+  sameSite: isProduction ? 'none' : 'lax',
+  maxAge: 15 * 60 * 1000,
+});
 
-    res.cookie('refresh_token', refreshToken, {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'lax',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
+res.cookie('refresh_token', refreshToken, {
+  httpOnly: true,
+  secure: isProduction,
+  sameSite: isProduction ? 'none' : 'lax',
+  maxAge: 7 * 24 * 60 * 60 * 1000,
+});
 
     return {
       message: 'Login successful',
@@ -96,12 +100,12 @@ export class AuthService {
       },
     );
     console.log('newAccessToken', newAccessToken);
-    res.cookie('access_token', newAccessToken, {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'lax',
-      maxAge: 15 * 60 * 1000,
-    });
+res.cookie('access_token', newAccessToken, {
+  httpOnly: true,
+  secure: isProduction,        // HTTPS only in production
+  sameSite: isProduction ? 'none' : 'lax',
+  maxAge: 15 * 60 * 1000,
+});
 
     return { message: 'Token refreshed successfully' };
   }
