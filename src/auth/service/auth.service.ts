@@ -62,14 +62,14 @@ export class AuthService {
 
     res.cookie('access_token', accessToken, {
       httpOnly: true,
-      secure: false,
+      secure: true,
       sameSite: 'lax',
       maxAge: 15 * 60 * 1000,
     });
 
     res.cookie('refresh_token', refreshToken, {
       httpOnly: true,
-      secure: false,
+      secure: true,
       sameSite: 'lax',
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
@@ -98,7 +98,7 @@ export class AuthService {
     console.log('newAccessToken', newAccessToken);
     res.cookie('access_token', newAccessToken, {
       httpOnly: true,
-      secure: false,
+      secure: true,
       sameSite: 'lax',
       maxAge: 15 * 60 * 1000,
     });
