@@ -12,14 +12,15 @@ async function bootstrap() {
   app.use(cookieParser())
 
   app.enableCors({
-    origin: 'http://localhost:4200',
+    origin: process.env.FRONTEND_URL,
     credentials: true
   })
 
     app.useStaticAssets(join(__dirname, '..', 'uploads'), {
     prefix: '/uploads/',
   });
-  await app.listen(process.env.PORT ?? 3000);
+ await app.listen(process.env.PORT ?? 3000, '0.0.0.0');
+
   console.log(`Server is running on port ${process.env.PORT ?? 3000}`);
 }
 bootstrap();
