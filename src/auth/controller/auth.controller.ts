@@ -42,6 +42,7 @@ export class AuthController {
     }
 
     const result = await this._authService.refreshTokens(refreshToken, res);
+console.log('Cookies sent:', res.getHeaders()['set-cookie']);
 
     console.log('data', result);
     return res.json(result);
