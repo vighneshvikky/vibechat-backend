@@ -64,17 +64,19 @@ export class AuthService {
       expiresIn: '7d',
     });
 
+    console.log('isProduction', isProduction)
+
 res.cookie('access_token', accessToken, {
   httpOnly: true,
-  secure: true,       
-  sameSite: 'none',
+  secure: isProduction,       
+  sameSite: isProduction ? 'none' : 'lax',
   maxAge: 15 * 60 * 1000,
 });
 
 res.cookie('refresh_token', refreshToken, {
   httpOnly: true,
-  secure: true,
-  sameSite: 'none',
+  secure: isProduction,
+  sameSite: isProduction ? 'none' : 'lax',
   maxAge: 7 * 24 * 60 * 60 * 1000,
 });
 
@@ -102,8 +104,8 @@ res.cookie('refresh_token', refreshToken, {
     console.log('newAccessToken', newAccessToken);
 res.cookie('access_token', newAccessToken, {
   httpOnly: true,
-  secure: true,      
-  sameSite: 'none',
+  secure: isProduction,      
+  sameSite: isProduction ? 'none' : 'lax',
   maxAge: 15 * 60 * 1000,
 });
 

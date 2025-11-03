@@ -1,4 +1,4 @@
-// jwt-auth.middleware.ts
+
 import { Injectable, NestMiddleware } from '@nestjs/common';
 import { NextFunction, Request, Response } from 'express';
 import * as jwt from 'jsonwebtoken';

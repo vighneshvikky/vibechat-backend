@@ -12,10 +12,8 @@ async function bootstrap() {
   app.use(cookieParser())
 
   app.enableCors({
-    origin: ['https://dqoyss5zce7oa.cloudfront.net', 'http://localhost:4200'],
-    credentials: true,
-      methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+    origin: process.env.FRONTEND_URL,
+    credentials: true
   })
 
    const isProduction = process.env.NODE_ENV === 'production';
