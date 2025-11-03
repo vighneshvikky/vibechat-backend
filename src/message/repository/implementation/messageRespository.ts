@@ -27,7 +27,7 @@ export class MessageRepository implements IMessageRepository {
   ): Promise<PopulatedMessage> {
     if (type === 'image' && fileMetadata?.fileName) {
       const baseUrl = process.env.BASE_URL;
-      fileMetadata.url = `${baseUrl}/uploads/${encodeURIComponent(fileMetadata.fileName)}`;
+      fileMetadata.url = `/uploads/${encodeURIComponent(fileMetadata.fileName)}`;
     }
 
     const message = new this.messageModel({
