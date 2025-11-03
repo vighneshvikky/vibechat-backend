@@ -10,7 +10,7 @@ async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
   app.use(cookieParser());
-
+console.log('frontend', process.env.FRONTEND_URL)
   app.enableCors({
     origin: process.env.FRONTEND_URL,
     credentials: true,

@@ -6,6 +6,10 @@ import * as jwt from 'jsonwebtoken';
 @Injectable()
 export class JwtMiddleware implements NestMiddleware {
   use(req: Request, res: Response, next: NextFunction) {
+
+    console.log('Incoming cookies:', req.cookies);
+console.log('Raw cookie header:', req.headers.cookie);
+
     if (
       req.originalUrl.startsWith('/auth/login') ||
       req.originalUrl.startsWith('/auth/register') ||
