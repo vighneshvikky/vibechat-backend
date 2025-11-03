@@ -15,36 +15,32 @@ export class FileUploadService {
     }
   }
 
-  async uploadFile(file: Express.Multer.File): Promise<{
-    fileName: string;
-    originalName: string;
-    fileSize: number;
-    mimeType: string;
-    url: string;
-  }> {
-    if (!file) throw new BadRequestException('No file provided');
+ async uploadFile(file: Express.Multer.File): Promise<{
+  fileName: string;
+  originalName: string;
+  fileSize: number;
+  mimeType: string;
+  url: string;
+}> {
+  if (!file) throw new BadRequestException('No file provided');
 
-    const maxSize = 10 * 1024 * 1024;
-    if (file.size > maxSize)
-      throw new BadRequestException('File size exceeds 10MB limit');
+  const maxSize = 10 * 1024 * 1024;
+  if (file.size > maxSize)
+    throw new BadRequestException('File size exceeds 10MB limit');
 
-   
+  // file.path is automatically created by Multer with diskStorage
+  const fileExt = path.extname(file.originalname);
+  const fileName = path.basename(file.filename);
+  const relativeUrl = `/uploads/${fileName}`;
 
-
-    const fileExt = path.extname(file.originalname);
-    const fileName = `${uuidv4()}${fileExt}`;
-    const filePath = path.join(this.uploadPath, fileName);
-
-    fs.writeFileSync(filePath, file.buffer);
-
-    return {
-      fileName,
-      originalName: file.originalname,
-      fileSize: file.size,
-      mimeType: file.mimetype,
-      url: `/uploads/chat-files/${fileName}`,
-    };
-  }
+  return {
+    fileName,
+    originalName: file.originalname,
+    fileSize: file.size,
+    mimeType: file.mimetype,
+    url: relativeUrl,
+  };
+}
 
   getFilePath(fileName: string): string {
     return path.join(this.uploadPath, fileName);
