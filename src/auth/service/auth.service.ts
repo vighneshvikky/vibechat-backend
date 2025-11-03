@@ -69,8 +69,10 @@ export class AuthService {
 
 res.cookie('access_token', accessToken, {
   httpOnly: true,
-  secure: this.isProduction,       
+  secure: this.isProduction,             // must be true in production
   sameSite: this.isProduction ? 'none' : 'lax',
+  domain: this.isProduction ? '.vortex-fit.space' : undefined, // 👈 important
+  path: '/',
   maxAge: 15 * 60 * 1000,
 });
 
@@ -78,8 +80,11 @@ res.cookie('refresh_token', refreshToken, {
   httpOnly: true,
   secure: this.isProduction,
   sameSite: this.isProduction ? 'none' : 'lax',
+  domain: this.isProduction ? '.vortex-fit.space' : undefined, // 👈 important
+  path: '/',
   maxAge: 7 * 24 * 60 * 60 * 1000,
 });
+
 
     return {
       message: 'Login successful',
@@ -105,10 +110,13 @@ res.cookie('refresh_token', refreshToken, {
     console.log('newAccessToken', newAccessToken);
 res.cookie('access_token', newAccessToken, {
   httpOnly: true,
-  secure: this.isProduction,      
+  secure: this.isProduction,
   sameSite: this.isProduction ? 'none' : 'lax',
+  domain: this.isProduction ? '.vortex-fit.space' : undefined,
+  path: '/',
   maxAge: 15 * 60 * 1000,
 });
+
 
     return { message: 'Token refreshed successfully' };
   }
