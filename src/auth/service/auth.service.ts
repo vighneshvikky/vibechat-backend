@@ -8,10 +8,11 @@ import {
   IUSERREPOSITORY,
 } from 'src/user/repository/interface/IUser-repository.interface';
 
-const isProduction = process.env.NODE_ENV === 'production';
+
 
 @Injectable()
 export class AuthService {
+   private readonly isProduction = process.env.NODE_ENV === 'production';
   constructor(
     @Inject(IUSERREPOSITORY)
     private readonly _userRepository: IUserRepository,
@@ -64,19 +65,19 @@ export class AuthService {
       expiresIn: '7d',
     });
 
-    console.log('isProduction', isProduction)
+    console.log('isProduction', this.isProduction)
 
 res.cookie('access_token', accessToken, {
   httpOnly: true,
-  secure: isProduction,       
-  sameSite: isProduction ? 'none' : 'lax',
+  secure: this.isProduction,       
+  sameSite: this.isProduction ? 'none' : 'lax',
   maxAge: 15 * 60 * 1000,
 });
 
 res.cookie('refresh_token', refreshToken, {
   httpOnly: true,
-  secure: isProduction,
-  sameSite: isProduction ? 'none' : 'lax',
+  secure: this.isProduction,
+  sameSite: this.isProduction ? 'none' : 'lax',
   maxAge: 7 * 24 * 60 * 60 * 1000,
 });
 
@@ -104,8 +105,8 @@ res.cookie('refresh_token', refreshToken, {
     console.log('newAccessToken', newAccessToken);
 res.cookie('access_token', newAccessToken, {
   httpOnly: true,
-  secure: isProduction,      
-  sameSite: isProduction ? 'none' : 'lax',
+  secure: this.isProduction,      
+  sameSite: this.isProduction ? 'none' : 'lax',
   maxAge: 15 * 60 * 1000,
 });
 
