@@ -3,7 +3,7 @@ import { AppModule } from './app.module';
 import * as dotenv from 'dotenv';
 dotenv.config();
 import { join } from 'path';
-import * as cookieParser from 'cookie-parser';
+import cookieParser from 'cookie-parser';
 import { NestExpressApplication } from '@nestjs/platform-express';
 
 async function bootstrap() {
