@@ -27,6 +27,8 @@ export class AuthController {
 
   @Post('login')
   async login(@Body() body: LoginDto, @Res() res: Response) {
+    console.log('Cookies sent:', res.getHeaders()['set-cookie']);
+
     const data = await this._authService.login(body.email, body.password, res);
     return res.status(200).json(data);
   }
