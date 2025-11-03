@@ -12,7 +12,7 @@ async function bootstrap() {
   app.use(cookieParser())
 
   app.enableCors({
-    origin: 'https://dqoyss5zce7oa.cloudfront.net',
+    origin: ['https://dqoyss5zce7oa.cloudfront.net', 'http://localhost:4200'],
     credentials: true,
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
