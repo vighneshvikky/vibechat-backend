@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Inject,
   Post,
   Req,
   Res,
@@ -10,6 +11,7 @@ import {
 import { AuthService } from '../service/auth.service';
 import { Response } from 'express';
 import { LoginDto, RegisterDto } from '../dto/auth.dto';
+import { IAuthService, IAUTHSERVICE } from '../service/interface/IAuthService.interface';
 
 interface RequestWithCookies extends Request {
   cookies: Record<string, string>;
@@ -17,7 +19,7 @@ interface RequestWithCookies extends Request {
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly _authService: AuthService) {}
+  constructor(@Inject(IAUTHSERVICE) private readonly _authService:IAuthService ) {}
 
   @Post('register')
   async register(@Body() body: RegisterDto) {

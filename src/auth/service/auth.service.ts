@@ -8,18 +8,14 @@ import {
   IUSERREPOSITORY,
 } from 'src/user/repository/interface/IUser-repository.interface';
 
-
-
 @Injectable()
 export class AuthService {
-   private readonly isProduction = process.env.NODE_ENV === 'production';
+  private readonly isProduction = process.env.NODE_ENV === 'production';
   constructor(
     @Inject(IUSERREPOSITORY)
     private readonly _userRepository: IUserRepository,
     private readonly _jwtService: JwtService,
   ) {}
-
-  
 
   async register(userData: Partial<User>) {
     const existingUser = await this._userRepository.findByEmail(
@@ -65,26 +61,23 @@ export class AuthService {
       expiresIn: '7d',
     });
 
-    console.log('isProduction', this.isProduction)
+    console.log('isProduction', this.isProduction);
 
-res.cookie('access_token', accessToken, {
-  httpOnly: true,
-  secure: this.isProduction,             // must be true in production
-  sameSite: this.isProduction ? 'none' : 'lax',
-  domain: this.isProduction ? '.vortex-fit.space' : undefined, // 👈 important
-  path: '/',
-  maxAge: 15 * 60 * 1000,
-});
+    res.cookie('access_token', accessToken, {
+      httpOnly: true,
+      secure: this.isProduction,
+      sameSite: this.isProduction ? 'none' : 'lax',
+      path: '/',
+      maxAge: 15 * 60 * 1000,
+    });
 
-res.cookie('refresh_token', refreshToken, {
-  httpOnly: true,
-  secure: this.isProduction,
-  sameSite: this.isProduction ? 'none' : 'lax',
-  domain: this.isProduction ? '.vortex-fit.space' : undefined, // 👈 important
-  path: '/',
-  maxAge: 7 * 24 * 60 * 60 * 1000,
-});
-
+    res.cookie('refresh_token', refreshToken, {
+      httpOnly: true,
+      secure: this.isProduction,
+      sameSite: this.isProduction ? 'none' : 'lax',
+      path: '/',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
 
     return {
       message: 'Login successful',
@@ -108,15 +101,13 @@ res.cookie('refresh_token', refreshToken, {
       },
     );
     console.log('newAccessToken', newAccessToken);
-res.cookie('access_token', newAccessToken, {
-  httpOnly: true,
-  secure: this.isProduction,
-  sameSite: this.isProduction ? 'none' : 'lax',
-  domain: this.isProduction ? '.vortex-fit.space' : undefined,
-  path: '/',
-  maxAge: 15 * 60 * 1000,
-});
-
+    res.cookie('access_token', newAccessToken, {
+      httpOnly: true,
+      secure: this.isProduction,
+      sameSite: this.isProduction ? 'none' : 'lax',
+      path: '/',
+      maxAge: 15 * 60 * 1000,
+    });
 
     return { message: 'Token refreshed successfully' };
   }

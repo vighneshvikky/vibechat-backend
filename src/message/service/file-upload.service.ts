@@ -28,7 +28,7 @@ export class FileUploadService {
   if (file.size > maxSize)
     throw new BadRequestException('File size exceeds 10MB limit');
 
-  // file.path is automatically created by Multer with diskStorage
+
   const fileExt = path.extname(file.originalname);
   const fileName = path.basename(file.filename);
   const relativeUrl = `/uploads/${fileName}`;
