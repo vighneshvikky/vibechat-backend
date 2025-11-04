@@ -24,7 +24,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server: Server;
 
-  // Store user-socket mapping
   private userSockets = new Map<string, string>();
 
   constructor(
@@ -35,7 +34,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   handleConnection(client: Socket) {
     console.log(`🔥 Client connected: ${client.id}`);
 
-    // Get userId from query params if provided
+
     const userId = client.handshake.query.userId as string;
     if (userId) {
       this.userSockets.set(userId, client.id);
@@ -46,7 +45,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   handleDisconnect(client: Socket) {
     console.log(`❌ Client disconnected: ${client.id}`);
 
-    // Remove user from mapping
     for (const [userId, socketId] of this.userSockets.entries()) {
       if (socketId === client.id) {
         this.userSockets.delete(userId);
@@ -56,7 +54,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
-  // ✅ Join a chat room - Accept both chatId and userId
+  
   @SubscribeMessage('joinRoom')
   async handleJoinRoom(
     @MessageBody() data: { chatId: string; userId: string },
@@ -66,21 +64,21 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     console.log(`📥 Join room request:`, data);
 
-    // Validate chatId format
+  
     if (!chatId || !chatId.match(/^[0-9a-fA-F]{24}$/)) {
       console.error('❌ Invalid chat ID:', chatId);
       client.emit('error', { message: 'Invalid chat ID' });
       return;
     }
 
-    // Join the room
+   
     client.join(chatId);
     console.log(`✅ ${client.id} (User: ${userId}) joined room ${chatId}`);
 
-    // Emit confirmation to the client
+    
     client.emit('roomJoined', { chatId, userId });
 
-    // Notify others in the room
+  
     client.to(chatId).emit('userJoined', {
       chatId,
       userId,
@@ -88,7 +86,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     });
   }
 
-  // ✅ Leave a chat room
   @SubscribeMessage('leaveRoom')
   handleLeaveRoom(
     @MessageBody() data: { chatId: string; userId: string },
@@ -99,7 +96,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     client.leave(chatId);
     console.log(`🚪 ${client.id} (User: ${userId}) left room ${chatId}`);
 
-    // Notify others
+   
     client.to(chatId).emit('userLeft', {
       chatId,
       userId,
@@ -107,8 +104,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     });
   }
 
-  // ✅ Send message
-  // chatgateway.ts
+ 
 @SubscribeMessage('sendMessage')
 async handleSendMessage(
   @MessageBody()
@@ -117,7 +113,7 @@ async handleSendMessage(
     senderId: string;
     content: string;
     type?: string;
-    fileMetadata?: FileMetadata; // Add this
+    fileMetadata?: FileMetadata; 
   },
   @ConnectedSocket() client: Socket,
 ) {
@@ -174,7 +170,7 @@ async handleSendMessage(
   }
 }
 
-  // Add this method to your ChatGateway class
+
 @SubscribeMessage('createPrivateChat')
 async handleCreatePrivateChat(
   @MessageBody() data: { userId1: string; userId2: string },
@@ -183,18 +179,16 @@ async handleCreatePrivateChat(
   console.log('💬 CREATE PRIVATE CHAT event received:', data);
 
   try {
-    // Create or get existing private chat
+ 
     const chat = await this.chatService.createPrivateChat(
       data.userId1,
       data.userId2,
     );
 
-    // console.log('✅ Private chat created:', chat._id!);
-
-    // Send confirmation to creator
+  
     client.emit('privateChatCreated', { chat });
 
-    // Notify the other user (if online)
+
     const otherUserId = data.userId2;
     const socketId = this.userSockets.get(otherUserId);
     if (socketId) {
@@ -225,13 +219,13 @@ async handleCreatePrivateChat(
     console.log('👥 CREATE GROUP event received:', data);
 
     try {
-      // Include creator in participants
+    
       const allParticipants = Array.from(
         new Set([data.createdBy, ...data.participants]),
       );
       console.log('📋 All participants:', allParticipants);
 
-      // Create group via service
+ 
       const group = await this.chatService.createGroupChat(
         data.name,
         allParticipants,
@@ -240,7 +234,7 @@ async handleCreatePrivateChat(
 
       if (group) console.log('✅ Group created:', group._id);
 
-      // Notify all participants including creator
+
       for (const participantId of allParticipants) {
         if (participantId !== data.createdBy) {
           const socketId = this.userSockets.get(participantId);
@@ -251,7 +245,7 @@ async handleCreatePrivateChat(
         }
       }
 
-      // Send confirmation to creator
+
       client.emit('groupCreated', { group });
       console.log('📤 Sent groupCreated to creator');
 
@@ -265,7 +259,7 @@ async handleCreatePrivateChat(
     }
   }
 
-  // Add user to group
+
   @SubscribeMessage('addUserToGroup')
   async handleAddUserToGroup(
     @MessageBody()
@@ -279,13 +273,13 @@ async handleCreatePrivateChat(
     console.log('➕ ADD USER TO GROUP:', data);
 
     try {
-      // Update group in database
+
       const updatedGroup = await this.chatService.addUserToGroup(
         data.chatId,
         data.userId,
       );
 
-      // Notify all group members
+   
       this.server.to(data.chatId).emit('userAddedToGroup', {
         chatId: data.chatId,
         userId: data.userId,
@@ -293,7 +287,7 @@ async handleCreatePrivateChat(
         group: updatedGroup,
       });
 
-      // Notify the added user specifically
+   
       const socketId = this.userSockets.get(data.userId);
       if (socketId) {
         this.server.to(socketId).emit('addedToGroup', updatedGroup);
@@ -306,7 +300,7 @@ async handleCreatePrivateChat(
     }
   }
 
-  // Remove user from group
+
   @SubscribeMessage('removeUserFromGroup')
   async handleRemoveUserFromGroup(
     @MessageBody()
@@ -325,7 +319,7 @@ async handleCreatePrivateChat(
         data.userId,
       );
 
-      // Notify all group members
+  
       this.server.to(data.chatId).emit('userRemovedFromGroup', {
         chatId: data.chatId,
         userId: data.userId,
@@ -333,7 +327,7 @@ async handleCreatePrivateChat(
         group: updatedGroup,
       });
 
-      // Notify the removed user
+    
       const socketId = this.userSockets.get(data.userId);
       if (socketId) {
         this.server.to(socketId).emit('removedFromGroup', {
@@ -348,7 +342,7 @@ async handleCreatePrivateChat(
     }
   }
 
-  // ✅ Typing indicators
+
   @SubscribeMessage('typing')
   handleTyping(
     @MessageBody()
@@ -362,7 +356,7 @@ async handleCreatePrivateChat(
   ) {
     console.log(`⌨️ Typing event:`, data);
 
-    // Emit to everyone in the room except the sender
+
     client.to(data.chatId).emit('userTyping', data);
   }
 }
