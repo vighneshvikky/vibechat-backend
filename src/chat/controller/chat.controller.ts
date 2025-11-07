@@ -21,9 +21,13 @@ import {
   IMessageService,
   IMESSAGESERVICE,
 } from 'src/message/service/interface/IMessage-interface';
-import { IChatService, ICHATSERVICE } from '../service/interface/IChatService.interface';
+import {
+  IChatService,
+  ICHATSERVICE,
+} from '../service/interface/IChatService.interface';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
+import { ChatGateway } from '../chatgateway';
 
 export class CreatePrivateChatDto {
   participantId: string;
@@ -39,66 +43,64 @@ export class CreateGroupChatDto {
 @Controller('chats')
 export class ChatsController {
   constructor(
-    @Inject(ICHATSERVICE) private readonly chatsService: IChatService,
-    @Inject(IMESSAGESERVICE) private readonly messageService: IMessageService,
+    @Inject(ICHATSERVICE) private readonly _chatsService: IChatService,
+    @Inject(IMESSAGESERVICE) private readonly _messageService: IMessageService,
     private readonly fileUploadService: FileUploadService,
+    private readonly _chatGateWay: ChatGateway,
   ) {}
 
- 
   @Post('private')
   async createPrivateChat(@Body() dto: CreatePrivateChatDto) {
-    return this.chatsService.createPrivateChat(dto.userId, dto.participantId);
+    return this._chatsService.createPrivateChat(dto.userId, dto.participantId);
   }
-
 
   @Post('group')
   async createGroupChat(@Body() dto: CreateGroupChatDto) {
     console.log('dto for creating group', dto);
-    return this.chatsService.createGroupChat(dto.name, dto.members, dto.userId);
+    return this._chatsService.createGroupChat(
+      dto.name,
+      dto.members,
+      dto.userId,
+    );
   }
 
-  
   @Get()
   async getUserChats(
     @Query('userId') userId: string,
     @Query('search') search?: string,
   ) {
-    return this.chatsService.getUserChats(userId, search);
+    return this._chatsService.getUserChats(userId, search);
   }
-
 
   @Get(':id')
   async getChat(@Param('id') id: string) {
-    return this.chatsService.findOne(id);
+    return this._chatsService.findOne(id);
   }
 
   @Get('getChatMessages/:id')
   async getChatMessages(@Param('id') id: string) {
     console.log('loading chats');
     console.log('id', id);
-    return await this.messageService.getMessages(id);
+    return await this._messageService.getMessages(id);
   }
-
 
   @Post(':id/join')
   async joinChat(@Param('id') chatId: string, @Body('userId') userId: string) {
-    return this.chatsService.joinChat(chatId, userId);
+    return this._chatsService.joinChat(chatId, userId);
   }
 
- 
   @Post(':id/leave')
   async leaveChat(@Param('id') chatId: string, @Body('userId') userId: string) {
-    return this.chatsService.leaveChat(chatId, userId);
+    return this._chatsService.leaveChat(chatId, userId);
   }
-
 
   @Delete(':id')
   async deleteChat(@Param('id') id: string) {
-    await this.chatsService.delete(id);
+    await this._chatsService.delete(id);
     return { message: 'Chat deleted successfully' };
   }
 
- @Post('upload')
+  @Post('upload')
   @UseInterceptors(
     FileInterceptor('file', {
       storage: diskStorage({
@@ -109,7 +111,7 @@ export class ChatsController {
           cb(null, uniqueSuffix + extname(file.originalname));
         },
       }),
-      limits: { fileSize: 10 * 1024 * 1024 }, 
+      limits: { fileSize: 10 * 1024 * 1024 },
     }),
   )
   async uploadFile(
@@ -128,7 +130,7 @@ export class ChatsController {
 
     const fileMetadata = await this.fileUploadService.uploadFile(file);
 
-    const message = await this.messageService.saveMessage(
+    const message = await this._messageService.saveMessage(
       chatId,
       senderId,
       file.originalname,
@@ -136,9 +138,13 @@ export class ChatsController {
       fileMetadata,
     );
 
-    const populatedMessage = await this.messageService.getMessageById(
+    const populatedMessage = await this._messageService.getMessageById(
       message._id!.toString(),
     );
+
+    this._chatGateWay.server.to(chatId).emit('newMessage', populatedMessage);
+
+    console.log('✅ Socket event emitted to room:', chatId);
 
     return {
       success: true,
