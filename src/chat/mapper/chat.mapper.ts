@@ -18,6 +18,7 @@ lastMessage: chat.lastMessage
   ? {
       content: chat.lastMessage.content,
       timestamp: chat.lastMessage.timestamp,
+      type: chat.lastMessage.type,
       senderId: (() => {
         const sender = chat.lastMessage!.senderId;
         if (sender instanceof Types.ObjectId) {

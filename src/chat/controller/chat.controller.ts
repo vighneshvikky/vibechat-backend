@@ -143,6 +143,7 @@ export class ChatsController {
     );
 
     this._chatGateWay.server.to(chatId).emit('newMessage', populatedMessage);
+    this._chatsService.updateLastMessage(chatId, message._id);
 
     console.log('✅ Socket event emitted to room:', chatId);
 

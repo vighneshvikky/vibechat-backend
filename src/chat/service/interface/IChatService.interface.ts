@@ -11,6 +11,7 @@ export interface IChatService {
   findOne(chatId: string): Promise<ChatResponse>;
   joinChat(chatId: string, userId: string): Promise<ChatResponse>;
   leaveChat(chatId: string, userId: string): Promise<ChatResponse | null>;
+  updateLastMessage(chatId: string, messageId: string): Promise<void>;
   delete(chatId: string): Promise<void>;
 }
 

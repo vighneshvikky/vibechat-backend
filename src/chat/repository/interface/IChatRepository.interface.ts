@@ -12,6 +12,7 @@ export interface ChatMemberResponse {
 export interface LastMessageResponse {
   content: string;
   timestamp: Date;
+  type: string;
   senderId: string;
 }
 

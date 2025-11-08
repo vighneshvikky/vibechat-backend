@@ -183,11 +183,13 @@ export class ChatRepository implements IChatRepository {
   async updateLastMessage(chatId: string, messageId: string): Promise<void> {
     await this.chatModel.findByIdAndUpdate(chatId, {
       lastMessage: new Types.ObjectId(messageId),
-    });
+    }).exec()
   }
 
   async delete(chatId: string): Promise<void> {
     const result = await this.chatModel.findByIdAndDelete(chatId);
     if (!result) throw new NotFoundException('Chat not found');
   }
+
+  
 }

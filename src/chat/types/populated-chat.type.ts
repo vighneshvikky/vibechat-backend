@@ -13,6 +13,7 @@ export interface PopulatedChat extends Omit<Chat, 'members' | 'lastMessage'> {
   lastMessage?: {
     _id?: Types.ObjectId;
     content: string;
+    type: string;
     timestamp: Date;
     senderId: Types.ObjectId | {
       _id: Types.ObjectId;

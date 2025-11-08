@@ -151,6 +151,11 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
       console.log('✅ Message broadcast complete');
 
+      await this.chatService.updateLastMessage(
+        data.chatId,
+        message._id!.toString(),
+      );
+
       client.emit('messageSent', {
         messageId: message._id,
         chatId: data.chatId,
