@@ -12,8 +12,14 @@ import { ChatService } from './service/chat.service';
 import { MessageService } from 'src/message/service/message.service';
 import { FileMetadata, MessageType } from 'src/message/interface/message.types';
 import { Inject } from '@nestjs/common';
-import { IMessageService, IMESSAGESERVICE } from 'src/message/service/interface/IMessage-interface';
-import { IChatService, ICHATSERVICE } from './service/interface/IChatService.interface';
+import {
+  IMessageService,
+  IMESSAGESERVICE,
+} from 'src/message/service/interface/IMessage-interface';
+import {
+  IChatService,
+  ICHATSERVICE,
+} from './service/interface/IChatService.interface';
 
 @WebSocketGateway({
   cors: {
@@ -34,7 +40,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   handleConnection(client: Socket) {
     console.log(`🔥 Client connected: ${client.id}`);
 
-
     const userId = client.handshake.query.userId as string;
     if (userId) {
       this.userSockets.set(userId, client.id);
@@ -54,7 +59,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
-  
   @SubscribeMessage('joinRoom')
   async handleJoinRoom(
     @MessageBody() data: { chatId: string; userId: string },
@@ -64,21 +68,17 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     console.log(`📥 Join room request:`, data);
 
-  
     if (!chatId || !chatId.match(/^[0-9a-fA-F]{24}$/)) {
       console.error('❌ Invalid chat ID:', chatId);
       client.emit('error', { message: 'Invalid chat ID' });
       return;
     }
 
-   
     client.join(chatId);
     console.log(`✅ ${client.id} (User: ${userId}) joined room ${chatId}`);
 
-    
     client.emit('roomJoined', { chatId, userId });
 
-  
     client.to(chatId).emit('userJoined', {
       chatId,
       userId,
@@ -96,7 +96,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     client.leave(chatId);
     console.log(`🚪 ${client.id} (User: ${userId}) left room ${chatId}`);
 
-   
     client.to(chatId).emit('userLeft', {
       chatId,
       userId,
@@ -104,107 +103,98 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     });
   }
 
- 
-@SubscribeMessage('sendMessage')
-async handleSendMessage(
-  @MessageBody()
-  data: {
-    chatId: string;
-    senderId: string;
-    content: string;
-    type?: string;
-    fileMetadata?: FileMetadata; 
-  },
-  @ConnectedSocket() client: Socket,
-) {
-  console.log('📥 RECEIVED sendMessage event');
-  console.log('📍 Data:', JSON.stringify(data, null, 2));
+  @SubscribeMessage('sendMessage')
+  async handleSendMessage(
+    @MessageBody()
+    data: {
+      chatId: string;
+      senderId: string;
+      content: string;
+      type?: string;
+      fileMetadata?: FileMetadata;
+    },
+    @ConnectedSocket() client: Socket,
+  ) {
+    console.log('📥 RECEIVED sendMessage event');
+    console.log('📍 Data:', JSON.stringify(data, null, 2));
 
-  try {
-    if (!data.chatId || !data.chatId.match(/^[0-9a-fA-F]{24}$/)) {
-      console.error('❌ Invalid chat ID:', data.chatId);
-      client.emit('messageError', { message: 'Invalid chat ID' });
-      return;
+    try {
+      if (!data.chatId || !data.chatId.match(/^[0-9a-fA-F]{24}$/)) {
+        console.error('❌ Invalid chat ID:', data.chatId);
+        client.emit('messageError', { message: 'Invalid chat ID' });
+        return;
+      }
+
+      if (!client.rooms.has(data.chatId)) {
+        console.error('❌ Client not in room:', data.chatId);
+        client.emit('messageError', { message: 'Not in chat room' });
+        return;
+      }
+
+      const message = await this.messageService.saveMessage(
+        data.chatId,
+        data.senderId,
+        data.content,
+        (data.type as MessageType) ?? 'text',
+        data.fileMetadata,
+      );
+
+      console.log('✅ Message saved with ID:', message._id);
+
+      const populatedMessage = await this.messageService.getMessageById(
+        message._id!.toString(),
+      );
+
+      console.log('📡 Broadcasting to room:', data.chatId);
+
+      this.server.to(data.chatId).emit('newMessage', populatedMessage);
+
+      console.log('✅ Message broadcast complete');
+
+      client.emit('messageSent', {
+        messageId: message._id,
+        chatId: data.chatId,
+      });
+    } catch (error) {
+      console.error('❌ ERROR in handleSendMessage:', error);
+      client.emit('messageError', {
+        message: 'Failed to send message',
+        error: error.message,
+      });
     }
-
-    if (!client.rooms.has(data.chatId)) {
-      console.error('❌ Client not in room:', data.chatId);
-      client.emit('messageError', { message: 'Not in chat room' });
-      return;
-    }
-
-    
-    const message = await this.messageService.saveMessage(
-      data.chatId,
-      data.senderId,
-      data.content,
-      (data.type as MessageType) ?? 'text',
-      data.fileMetadata, 
-    );
-
-    console.log('✅ Message saved with ID:', message._id);
-
-   
-    const populatedMessage = await this.messageService.getMessageById(
-      message._id!.toString(),
-    );
-
-    console.log('📡 Broadcasting to room:', data.chatId);
-
-
-    this.server.to(data.chatId).emit('newMessage', populatedMessage);
-
-    console.log('✅ Message broadcast complete');
-
-    client.emit('messageSent', {
-      messageId: message._id,
-      chatId: data.chatId,
-    });
-
-  } catch (error) {
-    console.error('❌ ERROR in handleSendMessage:', error);
-    client.emit('messageError', {
-      message: 'Failed to send message',
-      error: error.message,
-    });
   }
-}
 
+  @SubscribeMessage('createPrivateChat')
+  async handleCreatePrivateChat(
+    @MessageBody() data: { userId1: string; userId2: string },
+    @ConnectedSocket() client: Socket,
+  ) {
+    console.log('💬 CREATE PRIVATE CHAT event received:', data);
 
-@SubscribeMessage('createPrivateChat')
-async handleCreatePrivateChat(
-  @MessageBody() data: { userId1: string; userId2: string },
-  @ConnectedSocket() client: Socket,
-) {
-  console.log('💬 CREATE PRIVATE CHAT event received:', data);
+    try {
+      const chat = await this.chatService.createPrivateChat(
+        data.userId1,
+        data.userId2,
+      );
 
-  try {
- 
-    const chat = await this.chatService.createPrivateChat(
-      data.userId1,
-      data.userId2,
-    );
+      client.emit('privateChatCreated', { chat });
 
-  
-    client.emit('privateChatCreated', { chat });
+      const otherUserId = data.userId2;
+      const socketId = this.userSockets.get(otherUserId);
+      if (socketId) {
+        this.server.to(socketId).emit('privateChatCreated', { chat });
+        console.log(`📤 Sent privateChatCreated to user ${otherUserId}`);
+      }
 
-
-    const otherUserId = data.userId2;
-    const socketId = this.userSockets.get(otherUserId);
-    if (socketId) {
-      this.server.to(socketId).emit('privateChatCreated', { chat });
-      console.log(`📤 Sent privateChatCreated to user ${otherUserId}`);
+      return { success: true, chat };
+    } catch (error) {
+      console.error('❌ Error creating private chat:', error);
+      client.emit('error', {
+        message: 'Failed to create private chat',
+        error: error.message,
+      });
     }
-
-    return { success: true, chat };
-  } catch (error) {
-    console.error('❌ Error creating private chat:', error);
-    client.emit('error', {
-      message: 'Failed to create private chat',
-      error: error.message,
-    });
   }
-}
 
   @SubscribeMessage('createGroup')
   async handleCreateGroup(
@@ -219,13 +209,11 @@ async handleCreatePrivateChat(
     console.log('👥 CREATE GROUP event received:', data);
 
     try {
-    
       const allParticipants = Array.from(
         new Set([data.createdBy, ...data.participants]),
       );
       console.log('📋 All participants:', allParticipants);
 
- 
       const group = await this.chatService.createGroupChat(
         data.name,
         allParticipants,
@@ -233,7 +221,6 @@ async handleCreatePrivateChat(
       );
 
       if (group) console.log('✅ Group created:', group._id);
-
 
       for (const participantId of allParticipants) {
         if (participantId !== data.createdBy) {
@@ -244,7 +231,6 @@ async handleCreatePrivateChat(
           }
         }
       }
-
 
       client.emit('groupCreated', { group });
       console.log('📤 Sent groupCreated to creator');
@@ -259,37 +245,34 @@ async handleCreatePrivateChat(
     }
   }
 
+  @SubscribeMessage('addUserToGroup')
+  async handleAddUserToGroup(
+    @MessageBody()
+    data: {
+      chatId: string;
+      userId: string;
+      addedBy: string;
+    },
+    @ConnectedSocket() client: Socket,
+  ) {
+    console.log('➕ ADD USER TO GROUP:', data);
 
-@SubscribeMessage('addUserToGroup')
-async handleAddUserToGroup(
-  @MessageBody()
-  data: {
-    chatId: string;
-    userId: string;
-    addedBy: string;
-  },
-  @ConnectedSocket() client: Socket,
-) {
-  console.log('➕ ADD USER TO GROUP:', data);
-
-  try {
-     const updatedGroup = await this.chatService.addUserToGroup(
+    try {
+      const updatedGroup = await this.chatService.addUserToGroup(
         data.chatId,
         data.userId,
       );
 
-      // Find user names from the populated members
       const addedUser = updatedGroup.members.find(
-        (member: any) => member._id.toString() === data.userId
+        (member) => member._id.toString() === data.userId,
       );
       const addedByUser = updatedGroup.members.find(
-        (member: any) => member._id.toString() === data.addedBy
+        (member) => member._id.toString() === data.addedBy,
       );
 
       const addedUserName = addedUser?.name || 'User';
       const addedByUserName = addedByUser?.name || 'Admin';
 
-      // Create system message
       const systemMessageContent = `${addedUserName} was added by ${addedByUserName}`;
 
       const systemMessage = await this.messageService.saveMessage(
@@ -322,12 +305,12 @@ async handleAddUserToGroup(
         this.server.to(socketId).emit('addedToGroup', updatedGroup);
       }
 
-    return { success: true };
-  } catch (error) {
-    console.error('❌ Error adding user to group:', error);
-    client.emit('error', { message: 'Failed to add user to group' });
+      return { success: true };
+    } catch (error) {
+      console.error('❌ Error adding user to group:', error);
+      client.emit('error', { message: 'Failed to add user to group' });
+    }
   }
-}
 
   @SubscribeMessage('removeUserFromGroup')
   async handleRemoveUserFromGroup(
@@ -342,26 +325,22 @@ async handleAddUserToGroup(
     console.log('➖ REMOVE USER FROM GROUP:', data);
 
     try {
-       const groupBefore = await this.chatService.findOne(data.chatId);
-      
-      // Find user names from the members before removal
+      const groupBefore = await this.chatService.findOne(data.chatId);
       const removedUser = groupBefore.members.find(
-        (member: any) => member._id.toString() === data.userId
+        (member) => member._id.toString() === data.userId,
       );
       const removedByUser = groupBefore.members.find(
-        (member: any) => member._id.toString() === data.removedBy
+        (member) => member._id.toString() === data.removedBy,
       );
 
       const removedUserName = removedUser?.name || 'User';
       const removedByUserName = removedByUser?.name || 'Admin';
 
-      // Now remove the user
       const updatedGroup = await this.chatService.removeUserFromGroup(
         data.chatId,
         data.userId,
       );
 
-      // Create system message about user leaving
       const isUserLeavingThemselves = data.userId === data.removedBy;
       const systemMessageContent = isUserLeavingThemselves
         ? `${removedUserName} left the group`
@@ -409,7 +388,6 @@ async handleAddUserToGroup(
     }
   }
 
-
   @SubscribeMessage('typing')
   handleTyping(
     @MessageBody()
@@ -422,7 +400,6 @@ async handleAddUserToGroup(
     @ConnectedSocket() client: Socket,
   ) {
     console.log(`⌨️ Typing event:`, data);
-
 
     client.to(data.chatId).emit('userTyping', data);
   }
