@@ -41,7 +41,7 @@ export class MessageRepository implements IMessageRepository {
 
     const saved = await message.save();
 
-    // ✅ Populate and convert safely
+  
     const populated = await this.messageModel
       .findById(saved._id as Types.ObjectId)
       .populate('senderId', 'name email avatar')
@@ -53,7 +53,7 @@ export class MessageRepository implements IMessageRepository {
       throw new NotFoundException(`Message not found after saving`);
     }
 
-    // ✅ Use "unknown" bridge to avoid TS type conflict
+  
     return populated as unknown as PopulatedMessage;
   }
 
@@ -84,6 +84,18 @@ export class MessageRepository implements IMessageRepository {
 
     return message as unknown as PopulatedMessage;
   }
+
+async getUserById(userId: Types.ObjectId) {
+  const message =  await this.messageModel
+    .find({ senderId: userId })
+    .populate('senderId', '_id name email avatar')
+    .exec();
+
+
+
+    return message as unknown as PopulatedMessage;
+}
+
 
   private hasFormatting(content: string): boolean {
     const formatPatterns = /(\*\*|__|\*|_|~~|`)/;

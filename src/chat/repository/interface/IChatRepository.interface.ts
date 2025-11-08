@@ -31,7 +31,7 @@ export interface IChatRepository {
     name: string,
     members: string[],
     createdBy: string,
-  ): Promise<Chat>;
+  ): Promise<Chat | null>;
   addUserToGroup(chatId: string, userId: string): Promise<Chat | null>;
   removeUserFromGroup(chatId: string, userId: string): Promise<Chat | null>;
   getUserChats(userId: string, search?: string): Promise<PopulatedChat[]>;

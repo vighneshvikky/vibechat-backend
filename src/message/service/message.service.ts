@@ -63,10 +63,17 @@ export class MessageService implements IMessageService {
     return this.mapToResponse(message);
   }
 
+    async getUserById(userId: string){
+    const id = new Types.ObjectId(userId);
+
+    const message = await this._messageRepository.getUserById(id);
+    return this.mapToResponse(message)
+  }
+
   private mapToResponse(message: PopulatedMessage): MessageResponse {
     const chatIdValue: string = isPopulatedChat(message.chatId)
       ? message.chatId._id.toString()
-      : (message.chatId as Types.ObjectId).toString(); // 👈 Explicit cast to ObjectId
+      : (message.chatId as Types.ObjectId).toString(); 
 
     return {
       _id: message._id.toString(),
@@ -92,4 +99,6 @@ export class MessageService implements IMessageService {
       timestamp: message.timestamp,
     };
   }
+
+
 }

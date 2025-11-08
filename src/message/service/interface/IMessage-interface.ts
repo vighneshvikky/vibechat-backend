@@ -14,5 +14,6 @@ export interface IMessageService {
   getMessages(chatId: string): Promise<MessageResponse[]>;
 
   getMessageById(messageId: string): Promise<MessageResponse>;
+    getUserById(userId: string): Promise<MessageResponse>;
 
 }

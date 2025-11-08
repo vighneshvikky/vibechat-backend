@@ -1,3 +1,4 @@
+import { Types } from "mongoose";
 import { FileMetadata, MessageType } from "src/message/interface/message.types";
 import { MessageDocument, PopulatedMessage } from "src/message/schema/message.schema";
 
@@ -15,6 +16,6 @@ export interface IMessageRepository {
   getMessages(chatId: string): Promise<PopulatedMessage[]>;
 
   getMessageById(messageId: string): Promise<PopulatedMessage>;
-
+ getUserById(userId: Types.ObjectId): Promise<PopulatedMessage>;
   
 }

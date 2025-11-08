@@ -1,10 +1,10 @@
-// src/message/schema/message.schema.ts
+
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
 
 @Schema({ timestamps: true })
 export class Message {
-  _id: Types.ObjectId; // ✅ Explicitly define this
+  _id: Types.ObjectId; 
 
   @Prop({ type: Types.ObjectId, ref: 'Chat', required: true })
   chatId: Types.ObjectId;
@@ -17,7 +17,7 @@ export class Message {
 
   @Prop({
     default: 'text',
-    enum: ['text', 'image', 'file', 'video', 'audio'],
+    enum: ['text', 'image', 'file', 'video', 'audio', 'system'],
   })
   type: string;
 
@@ -37,17 +37,17 @@ export class Message {
   timestamp: Date;
 }
 
-// ✅ This ensures proper inference in service/repository
-export type MessageDocument = Message & Document & {
-  _id: Types.ObjectId;
-};
 
-// ✅ Create schema
+export type MessageDocument = Message &
+  Document & {
+    _id: Types.ObjectId;
+  };
+
 export const MessageSchema = SchemaFactory.createForClass(Message);
 
 export interface PopulatedMessage {
   _id: Types.ObjectId;
-  chatId: Types.ObjectId | { _id: Types.ObjectId }; // ✅ must include both
+  chatId: Types.ObjectId | { _id: Types.ObjectId };
   senderId: {
     _id: Types.ObjectId;
     name: string;
@@ -66,4 +66,3 @@ export interface PopulatedMessage {
   isFormatted: boolean;
   timestamp: Date;
 }
-

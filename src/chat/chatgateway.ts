@@ -260,46 +260,74 @@ async handleCreatePrivateChat(
   }
 
 
-  @SubscribeMessage('addUserToGroup')
-  async handleAddUserToGroup(
-    @MessageBody()
-    data: {
-      chatId: string;
-      userId: string;
-      addedBy: string;
-    },
-    @ConnectedSocket() client: Socket,
-  ) {
-    console.log('➕ ADD USER TO GROUP:', data);
+@SubscribeMessage('addUserToGroup')
+async handleAddUserToGroup(
+  @MessageBody()
+  data: {
+    chatId: string;
+    userId: string;
+    addedBy: string;
+  },
+  @ConnectedSocket() client: Socket,
+) {
+  console.log('➕ ADD USER TO GROUP:', data);
 
-    try {
-
-      const updatedGroup = await this.chatService.addUserToGroup(
+  try {
+     const updatedGroup = await this.chatService.addUserToGroup(
         data.chatId,
         data.userId,
       );
 
-   
+      // Find user names from the populated members
+      const addedUser = updatedGroup.members.find(
+        (member: any) => member._id.toString() === data.userId
+      );
+      const addedByUser = updatedGroup.members.find(
+        (member: any) => member._id.toString() === data.addedBy
+      );
+
+      const addedUserName = addedUser?.name || 'User';
+      const addedByUserName = addedByUser?.name || 'Admin';
+
+      // Create system message
+      const systemMessageContent = `${addedUserName} was added by ${addedByUserName}`;
+
+      const systemMessage = await this.messageService.saveMessage(
+        data.chatId,
+        data.addedBy,
+        systemMessageContent,
+        'system' as MessageType,
+        undefined,
+      );
+
+      const populatedSystemMessage = await this.messageService.getMessageById(
+        systemMessage._id!.toString(),
+      );
+
+      // Broadcast system message to room
+      this.server.to(data.chatId).emit('newMessage', populatedSystemMessage);
+
+      // Broadcast user added event
       this.server.to(data.chatId).emit('userAddedToGroup', {
         chatId: data.chatId,
         userId: data.userId,
         addedBy: data.addedBy,
         group: updatedGroup,
+        userName: addedUserName,
       });
 
-   
+      // Notify the added user
       const socketId = this.userSockets.get(data.userId);
       if (socketId) {
         this.server.to(socketId).emit('addedToGroup', updatedGroup);
       }
 
-      return { success: true };
-    } catch (error) {
-      console.error('❌ Error adding user to group:', error);
-      client.emit('error', { message: 'Failed to add user to group' });
-    }
+    return { success: true };
+  } catch (error) {
+    console.error('❌ Error adding user to group:', error);
+    client.emit('error', { message: 'Failed to add user to group' });
   }
-
+}
 
   @SubscribeMessage('removeUserFromGroup')
   async handleRemoveUserFromGroup(
@@ -314,24 +342,63 @@ async handleCreatePrivateChat(
     console.log('➖ REMOVE USER FROM GROUP:', data);
 
     try {
+       const groupBefore = await this.chatService.findOne(data.chatId);
+      
+      // Find user names from the members before removal
+      const removedUser = groupBefore.members.find(
+        (member: any) => member._id.toString() === data.userId
+      );
+      const removedByUser = groupBefore.members.find(
+        (member: any) => member._id.toString() === data.removedBy
+      );
+
+      const removedUserName = removedUser?.name || 'User';
+      const removedByUserName = removedByUser?.name || 'Admin';
+
+      // Now remove the user
       const updatedGroup = await this.chatService.removeUserFromGroup(
         data.chatId,
         data.userId,
       );
 
-  
+      // Create system message about user leaving
+      const isUserLeavingThemselves = data.userId === data.removedBy;
+      const systemMessageContent = isUserLeavingThemselves
+        ? `${removedUserName} left the group`
+        : `${removedUserName} was removed by ${removedByUserName}`;
+
+      const systemMessage = await this.messageService.saveMessage(
+        data.chatId,
+        data.removedBy,
+        systemMessageContent,
+        'system' as MessageType,
+        undefined,
+      );
+
+      const populatedSystemMessage = await this.messageService.getMessageById(
+        systemMessage._id!.toString(),
+      );
+
+      // Broadcast system message to all users in the room
+      this.server.to(data.chatId).emit('newMessage', populatedSystemMessage);
+
+      // Broadcast user removed event
       this.server.to(data.chatId).emit('userRemovedFromGroup', {
         chatId: data.chatId,
         userId: data.userId,
         removedBy: data.removedBy,
         group: updatedGroup,
+        userName: removedUserName,
       });
 
-    
+      // Notify the removed user specifically
       const socketId = this.userSockets.get(data.userId);
       if (socketId) {
         this.server.to(socketId).emit('removedFromGroup', {
           chatId: data.chatId,
+          groupName: updatedGroup?.name || groupBefore?.name,
+          removedBy: data.removedBy,
+          isKicked: !isUserLeavingThemselves,
         });
       }
 
