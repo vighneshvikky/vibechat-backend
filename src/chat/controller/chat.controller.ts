@@ -14,7 +14,7 @@ import {
 } from '@nestjs/common';
 import { ChatService } from '../service/chat.service';
 import { MessageService } from 'src/message/service/message.service';
-import { FileUploadService } from 'src/message/service/file-upload.service';
+import { FileUploadService } from 'src/utils/file-upload.service';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { MessageType } from 'src/message/interface/message.types';
 import {

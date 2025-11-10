@@ -3,7 +3,7 @@ import { MessageService } from './service/message.service';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Message, MessageSchema } from './schema/message.schema';
 import { Chat, ChatSchema } from 'src/chat/schema/chat.schema';
-import { FileUploadService } from './service/file-upload.service';
+import { FileUploadService } from '../utils/file-upload.service';
 import { IMESSAGESERVICE } from './service/interface/IMessage-interface';
 import { IMESSAGEREPOSITORY } from './repository/interface/IMessageRepository.interface';
 import { MessageRepository } from './repository/implementation/messageRespository';
