@@ -20,13 +20,14 @@ import {
   IChatService,
   ICHATSERVICE,
 } from './service/interface/IChatService.interface';
+import { IChatGateway } from './interface/IChatgateway.interface';
 
 @WebSocketGateway({
   cors: {
     origin: process.env.FRONTEND_URL,
   },
 })
-export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
+export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, IChatGateway {
   @WebSocketServer()
   server: Server;
 
@@ -38,7 +39,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   ) {}
 
   handleConnection(client: Socket) {
-    console.log(`🔥 Client connected: ${client.id}`);
+    
 
     const userId = client.handshake.query.userId as string;
     if (userId) {
@@ -48,7 +49,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   handleDisconnect(client: Socket) {
-    console.log(`❌ Client disconnected: ${client.id}`);
+   
 
     for (const [userId, socketId] of this.userSockets.entries()) {
       if (socketId === client.id) {
@@ -69,13 +70,13 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     console.log(`📥 Join room request:`, data);
 
     if (!chatId || !chatId.match(/^[0-9a-fA-F]{24}$/)) {
-      console.error('❌ Invalid chat ID:', chatId);
+   
       client.emit('error', { message: 'Invalid chat ID' });
       return;
     }
 
     client.join(chatId);
-    console.log(`✅ ${client.id} (User: ${userId}) joined room ${chatId}`);
+  
 
     client.emit('roomJoined', { chatId, userId });
 

@@ -12,8 +12,6 @@ import {
   BadRequestException,
   Inject,
 } from '@nestjs/common';
-import { ChatService } from '../service/chat.service';
-import { MessageService } from 'src/message/service/message.service';
 import { FileUploadService } from 'src/utils/file-upload.service';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { MessageType } from 'src/message/interface/message.types';
@@ -28,6 +26,7 @@ import {
 import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { ChatGateway } from '../chatgateway';
+import { IChatGateway, ICHATGATEWAY } from '../interface/IChatgateway.interface';
 
 export class CreatePrivateChatDto {
   participantId: string;
@@ -46,7 +45,8 @@ export class ChatsController {
     @Inject(ICHATSERVICE) private readonly _chatsService: IChatService,
     @Inject(IMESSAGESERVICE) private readonly _messageService: IMessageService,
     private readonly fileUploadService: FileUploadService,
-    private readonly _chatGateWay: ChatGateway,
+    @Inject(ICHATGATEWAY)
+    private readonly _chatGateWay: IChatGateway,
   ) {}
 
   @Post('private')

@@ -11,6 +11,7 @@ import { MessageModule } from 'src/message/message.module';
 import { ICHATSERVICE } from './service/interface/IChatService.interface';
 import { ICHATREPOSITORY } from './repository/interface/IChatRepository.interface';
 import { ChatService } from './service/chat.service';
+import { ICHATGATEWAY } from './interface/IChatgateway.interface';
 
 @Module({
   imports: [
@@ -32,7 +33,10 @@ import { ChatService } from './service/chat.service';
       provide: ICHATREPOSITORY,
       useClass: ChatRepository,
     },
-    ChatGateway,
+    {
+      provide: ICHATGATEWAY,
+      useClass: ChatGateway,
+    },
   ],
   controllers: [ChatsController],
   exports: [],

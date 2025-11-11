@@ -1,7 +1,6 @@
 import { Types } from 'mongoose';
 import { Chat } from '../schema/chat.schema';
-import { User } from 'src/user/schemas/user.schema';
-import { Message } from 'src/message/schema/message.schema'; 
+
 
 export interface PopulatedChat extends Omit<Chat, 'members' | 'lastMessage'> {
   members: {
