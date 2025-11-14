@@ -25,7 +25,6 @@ import {
 } from '../service/interface/IChatService.interface';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
-import { ChatGateway } from '../chatgateway';
 import { IChatGateway, ICHATGATEWAY } from '../interface/IChatgateway.interface';
 
 export class CreatePrivateChatDto {
