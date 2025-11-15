@@ -32,7 +32,7 @@ export interface IChatGateway {
   handleCreatePrivateChat(
     data: { userId1: string; userId2: string },
     client: Socket,
-  ): Promise<{ success: boolean; chat: any } | undefined>;
+  );
 
   handleCreateGroup(
     data: {
@@ -41,7 +41,7 @@ export interface IChatGateway {
       createdBy: string;
     },
     client: Socket,
-  ): Promise<{ success: boolean; group: any } | undefined>;
+  );
 
   handleAddUserToGroup(
     data: {

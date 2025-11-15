@@ -175,7 +175,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, IC
     @MessageBody() data: { userId1: string; userId2: string },
     @ConnectedSocket() client: Socket,
   ) {
-    console.log('💬 CREATE PRIVATE CHAT event received:', data);
+    
 
     try {
       const chat = await this.chatService.createPrivateChat(
